@@ -1,28 +1,34 @@
 from src.general_class import TableManger
 import openpyxl
 import os
+import win32com.client as win32
+import pythoncom
+import time
 
 def get_item_pks(rfq_pk):
     rfq_line_table = TableManger("RequestForQuoteLine")
     quote_assembly_table = TableManger("QuoteAssembly")
     quote_fk = rfq_line_table.get("QuoteFK", RequestForQuoteFK=rfq_pk)
     all_item_pks = []
-    item_fks = []
+    item_fks_dict = {}
     if quote_fk:
         for fk in quote_fk:
-            item_pks = quote_assembly_table.get("ItemFK", QuoteFK=fk[0])            
+            item_pks = quote_assembly_table.get("ItemFK", "QuantityRequired", QuoteFK=fk[0]) 
+            print(item_pks)           
             if item_pks:
                 all_item_pks.extend(item_pks)
+        print(all_item_pks)
         for pk in all_item_pks:
             if pk[0] is not None:
-                item_fks.append(pk[0])
-    return item_fks
+               item_fks_dict[pk[0]] = pk[1]
+    print(f"Dict: {item_fks_dict}")
+    return item_fks_dict
 
-def get_item_dict(item_fks):
+def get_item_dict(item_fks_dict):
     item_table = TableManger("Item")
     item_dict = {}
     
-    for fk in item_fks:
+    for fk, value in item_fks_dict.items():
         details = item_table.get(
             "PartNumber", "Description", "ItemTypeFK", "PartLength",
             "PartWidth", "Thickness", "StockLength", "StockWidth", "Comment",
@@ -33,6 +39,7 @@ def get_item_dict(item_fks):
                        "PartWidth", "Thickness", "StockLength", "StockWidth", "Comment"]
             item_details = details[0]  
             item_dict[fk] = {column: value for column, value in zip(columns, item_details)}
+            item_dict[fk]["QuantityRequired"] = value
     
     return item_dict
 
@@ -100,7 +107,7 @@ def sort_items_in_groups(item_dict: dict):
 def create_excel(filepath, item_dict, rfq_number):
     # Load the existing Excel file
     workbook = openpyxl.load_workbook(filepath)
-    new_dir = os.path.join("RFQ_Excel", str(rfq_number))
+    new_dir = os.path.join(r"C:\Users\saggarwal\PythonProjects\email_app_new\RFQ_Excel", str(rfq_number))
     new_filepath = os.path.join(new_dir, "_".join(filepath.split("_")[2:]))
     
     # Ensure the directory exists
@@ -119,6 +126,7 @@ def create_excel(filepath, item_dict, rfq_number):
                     sheet.cell(row=row_idx, column=5).value = values['PartWidth']
                     sheet.cell(row=row_idx, column=4).value = values['Thickness']
                     sheet.cell(row=row_idx, column=7).value = values['Comment']
+                    sheet.cell(row=row_idx, column=3).value = values['QuantityRequired']
                     row_idx += 1
             elif filepath=="RFQ_template_fin.xlsx":
                 if key1=="EmailCategory" and val=="fin":
@@ -128,6 +136,7 @@ def create_excel(filepath, item_dict, rfq_number):
                     sheet.cell(row=row_idx, column=5).value = values['PartWidth']
                     sheet.cell(row=row_idx, column=4).value = values['Thickness']
                     sheet.cell(row=row_idx, column=7).value = values['Comment']
+                    sheet.cell(row=row_idx, column=3).value = values['QuantityRequired']
                     row_idx += 1
             elif filepath=="RFQ_template_mat_al.xlsx":
                 if key1=="EmailCategory" and val=="mat-al":
@@ -137,6 +146,7 @@ def create_excel(filepath, item_dict, rfq_number):
                     sheet.cell(row=row_idx, column=5).value = values['StockWidth']
                     sheet.cell(row=row_idx, column=4).value = values['Thickness']
                     sheet.cell(row=row_idx, column=7).value = values['Comment']
+                    sheet.cell(row=row_idx, column=3).value = values['QuantityRequired']
                     row_idx += 1
             elif filepath=="RFQ_template_mat_steel.xlsx":
                 if key1=="EmailCategory" and val=="mat-steel":
@@ -146,6 +156,7 @@ def create_excel(filepath, item_dict, rfq_number):
                     sheet.cell(row=row_idx, column=5).value = values['StockWidth']
                     sheet.cell(row=row_idx, column=4).value = values['Thickness']
                     sheet.cell(row=row_idx, column=7).value = values['Comment']
+                    sheet.cell(row=row_idx, column=3).value = values['QuantityRequired']
                     row_idx += 1
             elif filepath=="RFQ_template_ht.xlsx":
                 if key1=="EmailCategory" and val=="ht":
@@ -155,12 +166,12 @@ def create_excel(filepath, item_dict, rfq_number):
                     sheet.cell(row=row_idx, column=5).value = values['PartWidth']
                     sheet.cell(row=row_idx, column=4).value = values['Thickness']
                     sheet.cell(row=row_idx, column=7).value = values['Comment']
+                    sheet.cell(row=row_idx, column=3).value = values['QuantityRequired']
                     row_idx += 1
 
     workbook.save(new_filepath)
+    return new_filepath
 
-
-# TODO: log creation of excel sheets and folders
 
 
 def send_all_emails(filepath_folder_of_excel_sheets: str) -> None:
@@ -169,8 +180,10 @@ def send_all_emails(filepath_folder_of_excel_sheets: str) -> None:
 
 def create_excel_sheets(rfq_number):
     item_dict = get_item_dict(get_item_pks(rfq_number))
+    print(item_dict)
     main_dict = sort_items_in_groups(item_dict)
     category_list = []
+    excel_path_list = []
     for key, value in main_dict.items():
         for key1, value1 in value.items():
             if key1=="EmailCategory" and value1 not in category_list:
@@ -178,25 +191,79 @@ def create_excel_sheets(rfq_number):
     for category in category_list:
         if category == "hardware":
             filepath = "RFQ_template_hardware.xlsx"
-            create_excel(filepath, main_dict, rfq_number)
+            excel_path = create_excel(filepath, main_dict, rfq_number)
+            excel_path_list.append(excel_path)
         elif category == "ht":
             filepath = "RFQ_template_ht.xlsx"
-            create_excel(filepath, main_dict, rfq_number)
+            excel_path=create_excel(filepath, main_dict, rfq_number)
+            excel_path_list.append(excel_path)
         elif category == "mat-steel":
             filepath = "RFQ_template_mat_steel.xlsx"
-            create_excel(filepath, main_dict, rfq_number)
+            excel_path = create_excel(filepath, main_dict, rfq_number)
+            excel_path_list.append(excel_path)
         elif category == "mat-al":
             filepath = "RFQ_template_mat_al.xlsx"
-            create_excel(filepath, main_dict, rfq_number)
+            excel_path = create_excel(filepath, main_dict, rfq_number)
+            excel_path_list.append(excel_path)
         elif category== "fin":
             filepath = "RFQ_template_fin.xlsx"
-            create_excel(filepath, main_dict, rfq_number)
-        
+            excel_path=create_excel(filepath, main_dict, rfq_number)
+            excel_path_list.append(excel_path)
+    return excel_path_list
+
+def send_outlook_email(excel_path, email_list, subject):
+    pythoncom.CoInitialize()
+    try:
+        outlook = win32.Dispatch("outlook.application")
+        print("Outlook email creation started")
+
+        for email in email_list:
+            try:
+                mail = outlook.CreateItem(0)  # Create a new mail item for each recipient
+                mail.Subject = subject
+                mail.Body = email_body_template()
+                mail.To = email
+                mail.Attachments.Add(excel_path)
+                mail.Send()
+                print(f"Email sent to {email}")
+                time.sleep(1)  # Adding a delay to avoid rate limits or other issues
+            except Exception as e:
+                print(f"An error occurred while sending email to {email}: {e}")
+                # Retry logic can be added here if needed
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    finally:
+        pythoncom.CoUninitialize()
 
 
+def email_body_template():
+    email_body = ("Hello, \n"
+            "Hope you are doing well,\n"
+            "Requesting a quote on pricing and lead time for the items listed in the Excel sheet.\n"
+            "Please fill out the Excel sheet, or the quote would not be considered.\n"
+            "Best,\n"
+            "Etezazi Industries\n")
+    return email_body 
+
+def send_mail(rfq_number):
+    excel_path_list = create_excel_sheets(rfq_number)
+    # email_dict = get_email_groups()    
+    # below is the test email id's, and you can comment that and uncomment above for real supplier IDS
+    email_dict = {
+        'mat_al': ['shubham.aggarwal@etezazicorps.com', 'yug.banker@etezazicorps.com'],
+        'fin': ['yug.banker@etezazicorps.com', 'shubham.smvit@gmail.com'],
+        'hardware': ['shubham.smvit@gmail.com'],
+    }
+    subject = f"RFQ - {rfq_number}"
+    
+    for excel_path in excel_path_list:
+        excel_filename = os.path.basename(excel_path)
+        for key, values in email_dict.items():
+            if key in excel_filename:
+                send_outlook_email(excel_path, values, subject)
 
 
 if __name__=="__main__":
-    create_excel_sheets(5995)
+    send_mail(5995)
 
  
