@@ -3534,3 +3534,39 @@
 2024-06-03 11:16:58,344 - GeneralAPI - Item - INFO - GET METHOD Query Built -> SELECT PartNumber,Description,ItemTypeFK,PartLength,PartWidth,Thickness,StockLength,StockWidth,Comment FROM Item WHERE ItemPK = ?
 2024-06-03 11:16:58,347 - GeneralAPI - Item - INFO - GET METHOD Query Built -> SELECT PartNumber,Description,ItemTypeFK,PartLength,PartWidth,Thickness,StockLength,StockWidth,Comment FROM Item WHERE ItemPK = ?
 2024-06-03 11:16:58,351 - GeneralAPI - Item - INFO - GET METHOD Query Built -> SELECT PartNumber,Description,ItemTypeFK,PartLength,PartWidth,Thickness,StockLength,StockWidth,Comment FROM Item WHERE ItemPK = ?
+2024-06-03 11:48:23,743 - GeneralAPI - RequestForQuoteLine - INFO - init new. Table Name - RequestForQuoteLine
+2024-06-03 11:48:23,754 - GeneralAPI - QuoteAssembly - INFO - init new. Table Name - QuoteAssembly
+2024-06-03 11:48:23,755 - GeneralAPI - RequestForQuoteLine - INFO - GET METHOD Query Built -> SELECT QuoteFK FROM RequestForQuoteLine WHERE RequestForQuoteFK = ?
+2024-06-03 11:48:23,759 - GeneralAPI - QuoteAssembly - INFO - GET METHOD Query Built -> SELECT ItemFK,QuantityRequired FROM QuoteAssembly WHERE QuoteFK = ?
+2024-06-03 11:48:23,780 - GeneralAPI - Item - INFO - init new. Table Name - Item
+2024-06-03 11:48:23,781 - GeneralAPI - Item - INFO - GET METHOD Query Built -> SELECT PartNumber,Description,ItemTypeFK,PartLength,PartWidth,Thickness,StockLength,StockWidth,Comment FROM Item WHERE ItemPK = ?
+2024-06-03 11:48:23,784 - GeneralAPI - Item - INFO - GET METHOD Query Built -> SELECT PartNumber,Description,ItemTypeFK,PartLength,PartWidth,Thickness,StockLength,StockWidth,Comment FROM Item WHERE ItemPK = ?
+2024-06-03 11:48:23,789 - GeneralAPI - Item - INFO - GET METHOD Query Built -> SELECT PartNumber,Description,ItemTypeFK,PartLength,PartWidth,Thickness,StockLength,StockWidth,Comment FROM Item WHERE ItemPK = ?
+2024-06-03 11:48:23,793 - GeneralAPI - Item - INFO - GET METHOD Query Built -> SELECT PartNumber,Description,ItemTypeFK,PartLength,PartWidth,Thickness,StockLength,StockWidth,Comment FROM Item WHERE ItemPK = ?
+2024-06-03 11:48:23,799 - GeneralAPI - Item - INFO - GET METHOD Query Built -> SELECT PartNumber,Description,ItemTypeFK,PartLength,PartWidth,Thickness,StockLength,StockWidth,Comment FROM Item WHERE ItemPK = ?
+2024-06-03 11:48:23,803 - GeneralAPI - Item - INFO - GET METHOD Query Built -> SELECT PartNumber,Description,ItemTypeFK,PartLength,PartWidth,Thickness,StockLength,StockWidth,Comment FROM Item WHERE ItemPK = ?
+2024-06-03 11:48:23,806 - GeneralAPI - Item - INFO - GET METHOD Query Built -> SELECT PartNumber,Description,ItemTypeFK,PartLength,PartWidth,Thickness,StockLength,StockWidth,Comment FROM Item WHERE ItemPK = ?
+2024-06-03 11:52:39,948 - GeneralAPI - RequestForQuoteLine - INFO - init new. Table Name - RequestForQuoteLine
+2024-06-03 11:52:39,965 - GeneralAPI - QuoteAssembly - INFO - init new. Table Name - QuoteAssembly
+2024-06-03 11:52:39,965 - GeneralAPI - RequestForQuoteLine - INFO - GET METHOD Query Built -> SELECT QuoteFK FROM RequestForQuoteLine WHERE RequestForQuoteFK = ?
+2024-06-03 11:52:39,971 - GeneralAPI - QuoteAssembly - INFO - GET METHOD Query Built -> SELECT ItemFK,QuantityRequired FROM QuoteAssembly WHERE QuoteFK = ?
+2024-06-03 11:52:40,010 - GeneralAPI - Item - INFO - init new. Table Name - Item
+2024-06-03 11:52:40,010 - GeneralAPI - Item - INFO - GET METHOD Query Built -> SELECT PartNumber,Description,ItemTypeFK,PartLength,PartWidth,Thickness,StockLength,StockWidth,Comment FROM Item WHERE ItemPK = ?
+2024-06-03 11:52:40,018 - GeneralAPI - Item - INFO - GET METHOD Query Built -> SELECT PartNumber,Description,ItemTypeFK,PartLength,PartWidth,Thickness,StockLength,StockWidth,Comment FROM Item WHERE ItemPK = ?
+2024-06-03 11:52:40,021 - GeneralAPI - Item - INFO - GET METHOD Query Built -> SELECT PartNumber,Description,ItemTypeFK,PartLength,PartWidth,Thickness,StockLength,StockWidth,Comment FROM Item WHERE ItemPK = ?
+2024-06-03 11:52:40,026 - GeneralAPI - Item - INFO - GET METHOD Query Built -> SELECT PartNumber,Description,ItemTypeFK,PartLength,PartWidth,Thickness,StockLength,StockWidth,Comment FROM Item WHERE ItemPK = ?
+2024-06-03 11:52:40,037 - GeneralAPI - Item - INFO - GET METHOD Query Built -> SELECT PartNumber,Description,ItemTypeFK,PartLength,PartWidth,Thickness,StockLength,StockWidth,Comment FROM Item WHERE ItemPK = ?
+2024-06-03 11:52:40,041 - GeneralAPI - Item - INFO - GET METHOD Query Built -> SELECT PartNumber,Description,ItemTypeFK,PartLength,PartWidth,Thickness,StockLength,StockWidth,Comment FROM Item WHERE ItemPK = ?
+2024-06-03 11:52:40,053 - GeneralAPI - Item - INFO - GET METHOD Query Built -> SELECT PartNumber,Description,ItemTypeFK,PartLength,PartWidth,Thickness,StockLength,StockWidth,Comment FROM Item WHERE ItemPK = ?
+2024-06-03 11:53:50,556 - GeneralAPI - RequestForQuoteLine - INFO - init new. Table Name - RequestForQuoteLine
+2024-06-03 11:53:50,575 - GeneralAPI - QuoteAssembly - INFO - init new. Table Name - QuoteAssembly
+2024-06-03 11:53:50,575 - GeneralAPI - RequestForQuoteLine - INFO - GET METHOD Query Built -> SELECT QuoteFK FROM RequestForQuoteLine WHERE RequestForQuoteFK = ?
+2024-06-03 11:53:50,581 - GeneralAPI - QuoteAssembly - INFO - GET METHOD Query Built -> SELECT ItemFK,QuantityRequired FROM QuoteAssembly WHERE QuoteFK = ?
+2024-06-03 11:53:50,626 - GeneralAPI - Item - INFO - init new. Table Name - Item
+2024-06-03 11:53:50,626 - GeneralAPI - Item - INFO - GET METHOD Query Built -> SELECT PartNumber,Description,ItemTypeFK,PartLength,PartWidth,Thickness,StockLength,StockWidth,Comment FROM Item WHERE ItemPK = ?
+2024-06-03 11:53:50,635 - GeneralAPI - Item - INFO - GET METHOD Query Built -> SELECT PartNumber,Description,ItemTypeFK,PartLength,PartWidth,Thickness,StockLength,StockWidth,Comment FROM Item WHERE ItemPK = ?
+2024-06-03 11:53:50,648 - GeneralAPI - Item - INFO - GET METHOD Query Built -> SELECT PartNumber,Description,ItemTypeFK,PartLength,PartWidth,Thickness,StockLength,StockWidth,Comment FROM Item WHERE ItemPK = ?
+2024-06-03 11:53:50,653 - GeneralAPI - Item - INFO - GET METHOD Query Built -> SELECT PartNumber,Description,ItemTypeFK,PartLength,PartWidth,Thickness,StockLength,StockWidth,Comment FROM Item WHERE ItemPK = ?
+2024-06-03 11:53:50,660 - GeneralAPI - Item - INFO - GET METHOD Query Built -> SELECT PartNumber,Description,ItemTypeFK,PartLength,PartWidth,Thickness,StockLength,StockWidth,Comment FROM Item WHERE ItemPK = ?
+2024-06-03 11:53:50,670 - GeneralAPI - Item - INFO - GET METHOD Query Built -> SELECT PartNumber,Description,ItemTypeFK,PartLength,PartWidth,Thickness,StockLength,StockWidth,Comment FROM Item WHERE ItemPK = ?
+2024-06-03 11:53:50,677 - GeneralAPI - Item - INFO - GET METHOD Query Built -> SELECT PartNumber,Description,ItemTypeFK,PartLength,PartWidth,Thickness,StockLength,StockWidth,Comment FROM Item WHERE ItemPK = ?

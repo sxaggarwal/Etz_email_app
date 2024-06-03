@@ -138,7 +138,7 @@ def create_excel(filepath, item_dict, rfq_number):
                     sheet.cell(row=row_idx, column=7).value = values['Comment']
                     sheet.cell(row=row_idx, column=3).value = values['QuantityRequired']
                     row_idx += 1
-            elif filepath=="RFQ_template_mat_al.xlsx":
+            elif filepath=="RFQ_template_mat-al.xlsx":
                 if key1=="EmailCategory" and val=="mat-al":
                     sheet.cell(row=row_idx, column=1).value = values['PartNumber']
                     sheet.cell(row=row_idx, column=2).value = values['Description']
@@ -148,7 +148,7 @@ def create_excel(filepath, item_dict, rfq_number):
                     sheet.cell(row=row_idx, column=7).value = values['Comment']
                     sheet.cell(row=row_idx, column=3).value = values['QuantityRequired']
                     row_idx += 1
-            elif filepath=="RFQ_template_mat_steel.xlsx":
+            elif filepath=="RFQ_template_mat-steel.xlsx":
                 if key1=="EmailCategory" and val=="mat-steel":
                     sheet.cell(row=row_idx, column=1).value = values['PartNumber']
                     sheet.cell(row=row_idx, column=2).value = values['Description']
@@ -198,11 +198,11 @@ def create_excel_sheets(rfq_number):
             excel_path=create_excel(filepath, main_dict, rfq_number)
             excel_path_list.append(excel_path)
         elif category == "mat-steel":
-            filepath = "RFQ_template_mat_steel.xlsx"
+            filepath = "RFQ_template_mat-steel.xlsx"
             excel_path = create_excel(filepath, main_dict, rfq_number)
             excel_path_list.append(excel_path)
         elif category == "mat-al":
-            filepath = "RFQ_template_mat_al.xlsx"
+            filepath = "RFQ_template_mat-al.xlsx"
             excel_path = create_excel(filepath, main_dict, rfq_number)
             excel_path_list.append(excel_path)
         elif category== "fin":
@@ -247,10 +247,10 @@ def email_body_template():
 
 def send_mail(rfq_number):
     excel_path_list = create_excel_sheets(rfq_number)
-    # email_dict = get_email_groups()    
-    # below is the test email id's, and you can comment that and uncomment above for real supplier IDS
+    # email_dict = get_email_groups()    #NOTE: Uncomment this when needed
+    # NOTE: below is the test email id's, and you can comment that and uncomment above for real supplier IDS
     email_dict = {
-        'mat_al': ['shubham.aggarwal@etezazicorps.com', 'yug.banker@etezazicorps.com'],
+        'mat-al': ['shubham.aggarwal@etezazicorps.com', 'yug.banker@etezazicorps.com'],
         'fin': ['yug.banker@etezazicorps.com', 'shubham.smvit@gmail.com'],
         'hardware': ['shubham.smvit@gmail.com'],
     }
