@@ -148,7 +148,7 @@ def create_excel_sheets(rfq_number):
     return excel_path_list
 
 
-def send_outlook_email(excel_path, email_list, subject):
+def send_outlook_email(excel_path, email_list, subject, other_attachment = []):
     pythoncom.CoInitialize()
     try:
         outlook = win32.Dispatch("outlook.application")
@@ -161,6 +161,9 @@ def send_outlook_email(excel_path, email_list, subject):
                 mail.Body = email_body_template()
                 mail.To = email
                 mail.Attachments.Add(excel_path)
+                if other_attachment:
+                    for attachment in other_attachment:
+                        mail.Attachments.Add(attachment)
                 mail.Send()
                 print(f"Email sent to {email}")
                 time.sleep(1)  # Adding a delay to avoid rate limits or other issues
@@ -182,7 +185,7 @@ def email_body_template():
             "Etezazi Industries\n")
     return email_body 
 
-def send_mail(rfq_number):
+def send_mail(rfq_number, other_attachment = []):
     excel_path_list = create_excel_sheets(rfq_number)
     # email_dict = get_email_groups()    #NOTE: Uncomment this when needed
     # NOTE: below is the test email id's, and you can comment that and uncomment above for real supplier IDS
@@ -215,5 +218,5 @@ def send_mail(rfq_number):
                     new_email_list = [email.strip() for email in new_email_list_str.split(",")]
                 else:
                     new_email_list = values
-                send_outlook_email(excel_path, new_email_list, subject)
+                send_outlook_email(excel_path, new_email_list, subject, other_attachment=other_attachment)
         
