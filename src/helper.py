@@ -4,7 +4,7 @@ import os
 import win32com.client as win32
 import pythoncom
 import time
-from  tkinter import messagebox
+from  tkinter import messagebox, simpledialog
 import subprocess
 
 def get_item_pks(rfq_pk):
@@ -187,7 +187,7 @@ def send_mail(rfq_number):
     # email_dict = get_email_groups()    #NOTE: Uncomment this when needed
     # NOTE: below is the test email id's, and you can comment that and uncomment above for real supplier IDS
     email_dict = {
-        'mat-al': ['shubham.aggarwal@etezazicorps.com'],
+        'mat-al': ['shubham.aggarwal@etezazicorps.com', 'shubham.smvit@gmail.com', 'yug.banker@etezazicorps.com'],
         'fin': ['shubham.smvit@gmail.com'],
         'hardware': ['shubham.smvit@gmail.com'],
     }
@@ -209,5 +209,11 @@ def send_mail(rfq_number):
         excel_filename = os.path.basename(excel_path)
         for key, values in email_dict.items():
             if key in excel_filename:
-                send_outlook_email(excel_path, values, subject)
+                email_list_str = "\n".join(values)
+                new_email_list_str = simpledialog.askstring("Edit Email IDs", f"Current email IDs for {key}:\n{email_list_str}\n\nEdit email IDs (separated by commas):", initialvalue=", ".join(values))
+                if new_email_list_str:
+                    new_email_list = [email.strip() for email in new_email_list_str.split(",")]
+                else:
+                    new_email_list = values
+                send_outlook_email(excel_path, new_email_list, subject)
         
