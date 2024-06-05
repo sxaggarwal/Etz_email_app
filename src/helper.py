@@ -4,6 +4,8 @@ import os
 import win32com.client as win32
 import pythoncom
 import time
+from  tkinter import messagebox
+import subprocess
 
 def get_item_pks(rfq_pk):
     rfq_line_table = TableManger("RequestForQuoteLine")
@@ -192,14 +194,20 @@ def send_mail(rfq_number):
     subject = f"RFQ - {rfq_number}"
     
     for excel_path in excel_path_list:
+        response = messagebox.askyesno("View/Edit Excel", f"Do you want to View and Edit the Excel file: {excel_path}")
+        if response:
+            subprocess.Popen(['start', excel_path], shell=True)
+            messagebox.showinfo("Info", f"Please edit and save the file: {excel_path}")
+            while True:
+                edit_complete = messagebox.askyesno("Edit Complete", "Have you finished editing and saving the file?")
+                if edit_complete:
+                    break
+                else:
+                    messagebox.showinfo("Info", "Please complete your edits and save the file before sending the email.")
+        else:
+            pass
         excel_filename = os.path.basename(excel_path)
         for key, values in email_dict.items():
             if key in excel_filename:
                 send_outlook_email(excel_path, values, subject)
-
-
-if __name__=="__main__":
-    rfq_number = input("Enter the RFQ number to send Email: ")
-    send_mail(rfq_number)
-
- 
+        
