@@ -4,8 +4,9 @@ import os
 import win32com.client as win32
 import pythoncom
 import time
-from  tkinter import messagebox, simpledialog
+from  tkinter import messagebox, ttk
 import subprocess
+import tkinter as tk
 
 def get_item_pks(rfq_pk):
     rfq_line_table = TableManger("RequestForQuoteLine")
@@ -22,6 +23,11 @@ def get_item_pks(rfq_pk):
             if pk[0] is not None:
                item_fks_dict[pk[0]] = pk[1]
     return item_fks_dict
+
+def create_single_item_dict(item_id, qty_req):
+    item_dict = {}
+    item_dict[item_id] = qty_req
+    return item_dict
 
 def get_item_dict(item_fks_dict):
     item_table = TableManger("Item")
@@ -132,8 +138,11 @@ def send_all_emails(filepath_folder_of_excel_sheets: str) -> None:
     pass
 
 
-def create_excel_sheets(rfq_number):
-    item_dict = get_item_dict(get_item_pks(rfq_number))
+def create_excel_sheets(rfq_number=None, item_id=None, qty_req=None):
+    if rfq_number:
+        item_dict = get_item_dict(get_item_pks(rfq_number))
+    elif item_id:
+        item_dict = get_item_dict(create_single_item_dict(item_id, qty_req)) #put a dict
     main_dict = sort_items_in_groups(item_dict)
     category_list = []
     excel_path_list = []
@@ -185,8 +194,8 @@ def email_body_template():
             "Etezazi Industries\n")
     return email_body 
 
-def send_mail(rfq_number, other_attachment = []):
-    excel_path_list = create_excel_sheets(rfq_number)
+def send_mail(rfq_number=None, other_attachment = [], item_id=None, qty_req=None):
+    
     # email_dict = get_email_groups()    #NOTE: Uncomment this when needed
     # NOTE: below is the test email id's, and you can comment that and uncomment above for real supplier IDS
     email_dict = {
@@ -194,8 +203,14 @@ def send_mail(rfq_number, other_attachment = []):
         'fin': ['shubham.smvit@gmail.com'],
         'hardware': ['shubham.smvit@gmail.com'],
     }
-    subject = f"RFQ - {rfq_number}"
-    
+    if rfq_number:
+        subject = f"RFQ - {rfq_number}"
+        excel_path_list = create_excel_sheets(rfq_number=rfq_number)
+    else:
+        subject = f"RFQ - {item_id}"
+        excel_path_list = create_excel_sheets(item_id=item_id, qty_req=qty_req)
+    root = tk.Tk()
+    root.withdraw()
     for excel_path in excel_path_list:
         response = messagebox.askyesno("View/Edit Excel", f"Do you want to View and Edit the Excel file: {excel_path}")
         if response:
@@ -212,11 +227,63 @@ def send_mail(rfq_number, other_attachment = []):
         excel_filename = os.path.basename(excel_path)
         for key, values in email_dict.items():
             if key in excel_filename:
-                email_list_str = "\n".join(values)
-                new_email_list_str = simpledialog.askstring("Edit Email IDs", f"Current email IDs for {key}:\n{email_list_str}\n\nEdit email IDs (separated by commas):", initialvalue=", ".join(values))
-                if new_email_list_str:
-                    new_email_list = [email.strip() for email in new_email_list_str.split(",")]
-                else:
-                    new_email_list = values
-                send_outlook_email(excel_path, new_email_list, subject, other_attachment=other_attachment)
+                # email_list_str = "\n".join(values)
+                # new_email_list_str = simpledialog.askstring("Edit Email IDs", f"Current email IDs for {key}:\n{email_list_str}\n\nEdit email IDs (separated by commas):", initialvalue=", ".join(values))
+                # if new_email_list_str:
+                #     new_email_list = [email.strip() for email in new_email_list_str.split(",")]
+                # else:
+                #     new_email_list = values
+                new_email_list = get_email_input(root, f"Edit Email IDs for {key}", values)
+                if new_email_list is not None:
+                    send_outlook_email(excel_path, new_email_list, subject, other_attachment=other_attachment)
+                # send_outlook_email(excel_path, new_email_list, subject, other_attachment=other_attachment)
+    root.destroy()
+
+def get_email_input(parent, title, initial_emails):
+    dialog = EmailDialog(parent, title, initial_emails)
+    parent.wait_window(dialog.top)
+    return dialog.result
+
+class EmailDialog:
+    def __init__(self, parent, title, initial_emails):
+        self.top = tk.Toplevel(parent)
+        self.top.title(title)
+        self.top.geometry("400x300")
+
+        self.label = tk.Label(self.top, text="Edit email IDs:")
+        self.label.pack(pady=10)
+
+        self.listbox = tk.Listbox(self.top, selectmode=tk.SINGLE)
+        self.listbox.pack(expand=True, fill='both', padx=10, pady=10)
+        for email in initial_emails:
+            self.listbox.insert(tk.END, email)
+
+        self.entry = tk.Entry(self.top)
+        self.entry.pack(pady=5)
+
+        self.add_button = ttk.Button(self.top, text="Add Email", command=self.add_email)
+        self.add_button.pack(side=tk.LEFT, padx=5, pady=5)
+
+        self.remove_button = ttk.Button(self.top, text="Remove Selected Email", command=self.remove_email)
+        self.remove_button.pack(side=tk.LEFT, padx=5, pady=5)
+
+        self.ok_button = ttk.Button(self.top, text="OK", command=self.on_ok)
+        self.ok_button.pack(side=tk.RIGHT, padx=5, pady=5)
+
+        self.result = None
+
+    def add_email(self):
+        email = self.entry.get().strip()
+        if email and email not in self.listbox.get(0, tk.END):
+            self.listbox.insert(tk.END, email)
+            self.entry.delete(0, tk.END)
+
+    def remove_email(self):
+        selected_idx = self.listbox.curselection()
+        if selected_idx:
+            self.listbox.delete(selected_idx)
+
+    def on_ok(self):
+        self.result = list(self.listbox.get(0, tk.END))
+        self.top.destroy()
         
