@@ -2,3 +2,6 @@ venv1/
 logs/
 RFQ_Excel/
 __pycache__
+build/
+dist/
+gui.spec

@@ -4,9 +4,10 @@ import os
 import win32com.client as win32
 import pythoncom
 import time
-from  tkinter import messagebox, ttk
+from  tkinter import messagebox, ttk, simpledialog
 import subprocess
 import tkinter as tk
+from tkinter.scrolledtext import ScrolledText
 
 def get_item_pks(rfq_pk):
     rfq_line_table = TableManger("RequestForQuoteLine")
@@ -113,7 +114,8 @@ def sort_items_in_groups(item_dict: dict):
 
 def create_excel(filepath, item_dict, rfq_number):
     workbook = openpyxl.load_workbook(filepath)
-    new_dir = os.path.join(r"C:\Users\saggarwal\PythonProjects\email_app_new\RFQ_Excel", str(rfq_number))
+    # new_dir = os.path.join(r".\RFQ_Excel", str(rfq_number))
+    new_dir = os.path.abspath(os.path.join(".", "RFQ_Excel", str(rfq_number)))
     new_filepath = os.path.join(new_dir, "_".join(filepath.split("_")[2:]))
     os.makedirs(new_dir, exist_ok=True)
     sheet = workbook.active
@@ -128,6 +130,7 @@ def create_excel(filepath, item_dict, rfq_number):
             sheet.cell(row=row_idx, column=4).value = values['Thickness']
             sheet.cell(row=row_idx, column=7).value = values['Comment']
             sheet.cell(row=row_idx, column=3).value = values['QuantityRequired']
+            #Insert here
             row_idx += 1
     workbook.save(new_filepath)
     return new_filepath
@@ -157,7 +160,7 @@ def create_excel_sheets(rfq_number=None, item_id=None, qty_req=None):
     return excel_path_list
 
 
-def send_outlook_email(excel_path, email_list, subject, other_attachment = []):
+def send_outlook_email(excel_path, email_list, subject, email_body, other_attachment=[], cc_email=None):
     pythoncom.CoInitialize()
     try:
         outlook = win32.Dispatch("outlook.application")
@@ -167,12 +170,23 @@ def send_outlook_email(excel_path, email_list, subject, other_attachment = []):
             try:
                 mail = outlook.CreateItem(0)  # Create a new mail item for each recipient
                 mail.Subject = subject
-                mail.Body = email_body_template()
+                mail.Body = email_body
                 mail.To = email
-                mail.Attachments.Add(excel_path)
-                if other_attachment:
-                    for attachment in other_attachment:
-                        mail.Attachments.Add(attachment)
+                mail.CC = cc_email
+
+                abs_excel_path = os.path.abspath(excel_path)
+                if os.path.isfile(abs_excel_path):
+                    mail.Attachments.Add(abs_excel_path)
+                else:
+                    print(f"Attachment not found: {abs_excel_path}")
+
+                for attachment in other_attachment:
+                    abs_attachment_path = os.path.abspath(attachment)
+                    if os.path.isfile(abs_attachment_path):
+                        mail.Attachments.Add(abs_attachment_path)
+                    else:
+                        print(f"Additional attachment not found: {abs_attachment_path}")
+
                 mail.Send()
                 print(f"Email sent to {email}")
                 time.sleep(1)  # Adding a delay to avoid rate limits or other issues
@@ -184,25 +198,55 @@ def send_outlook_email(excel_path, email_list, subject, other_attachment = []):
     finally:
         pythoncom.CoUninitialize()
 
+class EmailBodyDialog(simpledialog.Dialog):
+    def __init__(self, parent, initial_body):
+        self.initial_body = initial_body
+        super().__init__(parent, title = "Edit Email Body")
 
-def email_body_template():
-    email_body = ("Hello, \n"
+    def body(self, master):
+        self.title("Edit Email Body")
+        self.geometry("600x600")
+        self.resizable(True, True)
+        tk.Label(master, text="Edit the email body below:").pack(pady=5)
+        self.text = ScrolledText(master, wrap=tk.WORD)
+        self.text.pack(expand=True, fill=tk.BOTH)
+        self.text.insert(tk.END, self.initial_body)
+        return self.text
+
+    def apply(self):
+        self.result = self.text.get("1.0", tk.END)
+
+def email_body_template(root): #NOTE: In future we can somehow connect this to the database and fill info automatically of the user.
+    initial_body = ("Dear Supplier, \n"
             "Hope you are doing well,\n"
-            "Requesting a quote on pricing and lead time for the items listed in the Excel sheet.\n"
-            "Please fill out the Excel sheet, or the quote would not be considered.\n"
-            "Best,\n"
-            "Etezazi Industries\n")
-    return email_body 
+            "This email serves as a formal request for a quotation on pricing and lead time for the items listed in the attached Excel spreadsheet.\n"
+            "For your convenience, we have included several columns in the spreadsheet. While completion of all columns is not mandatory, we kindly request that you fill out those you deem most relevant to accurately reflecting your pricing and lead time for each item.\n"
+            "Please note that to ensure a proper evaluation of your offer, a completed spreadsheet is necessary.\n"
+            "We appreciate your prompt attention to this matter. Should you require any clarification regarding the listed items, please do not hesitate to contact us.\n"
+            "\n"
+            "Thankyou.\n"
+            "<your_name>\n"
+            "<your_designation>\n"
+            "Etezazi Industries Inc.\n"
+            "2101 E. 21st St North\n"
+            "Wichita, KS 67214\n"
+            "(316)-831 9937 Office EXT <your_ext>\n"
+            "Email: <your_email>\n"
+            "Website: www.etezazi-industries.com\n"
+            "AS9100D and ISO9001:2015 and ITAR Registered Company\n")
+    dialog = EmailBodyDialog(root, initial_body)
+    # root.wait_window(dialog)
+    return dialog.result.strip() if dialog.result else initial_body 
 
 def send_mail(rfq_number=None, other_attachment = [], item_id=None, qty_req=None):
     
-    # email_dict = get_email_groups()    #NOTE: Uncomment this when needed
+    email_dict = get_email_groups()    #NOTE: Uncomment this when needed
     # NOTE: below is the test email id's, and you can comment that and uncomment above for real supplier IDS
-    email_dict = {
-        'mat-al': ['shubham.aggarwal@etezazicorps.com', 'shubham.smvit@gmail.com', 'yug.banker@etezazicorps.com'],
-        'fin': ['shubham.smvit@gmail.com'],
-        'hardware': ['shubham.smvit@gmail.com'],
-    }
+    # email_dict = {
+    #     'mat-al': ['shubham.aggarwal@etezazicorps.com'],
+    #     'fin': ['shubham.smvit@gmail.com'],
+    #     'hardware': ['shubham.smvit@gmail.com'],
+    # }
     if rfq_number:
         subject = f"RFQ - {rfq_number}"
         excel_path_list = create_excel_sheets(rfq_number=rfq_number)
@@ -211,6 +255,7 @@ def send_mail(rfq_number=None, other_attachment = [], item_id=None, qty_req=None
         excel_path_list = create_excel_sheets(item_id=item_id, qty_req=qty_req)
     root = tk.Tk()
     root.withdraw()
+    email_body = email_body_template(root)
     for excel_path in excel_path_list:
         response = messagebox.askyesno("View/Edit Excel", f"Do you want to View and Edit the Excel file: {excel_path}")
         if response:
@@ -235,7 +280,7 @@ def send_mail(rfq_number=None, other_attachment = [], item_id=None, qty_req=None
                 #     new_email_list = values
                 new_email_list = get_email_input(root, f"Edit Email IDs for {key}", values)
                 if new_email_list is not None:
-                    send_outlook_email(excel_path, new_email_list, subject, other_attachment=other_attachment)
+                    send_outlook_email(excel_path, new_email_list, subject, email_body, other_attachment=other_attachment, cc_email="quote@etezazicorps.com")
                 # send_outlook_email(excel_path, new_email_list, subject, other_attachment=other_attachment)
     root.destroy()
 

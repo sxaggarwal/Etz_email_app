@@ -6,7 +6,7 @@ class EmailGui(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Send Email App")
-        self.geometry("400x300")
+        self.geometry("550x300")
         self.make_combobox()
     
     def make_combobox(self):
