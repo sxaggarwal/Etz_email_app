@@ -10,6 +10,7 @@ import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 
 def get_item_pks(rfq_pk):
+    """Gets all the ItemPK that is there in the RFQ"""
     rfq_line_table = TableManger("RequestForQuoteLine")
     quote_assembly_table = TableManger("QuoteAssembly")
     quote_fk = rfq_line_table.get("QuoteFK", RequestForQuoteFK=rfq_pk)
@@ -26,11 +27,13 @@ def get_item_pks(rfq_pk):
     return item_fks_dict
 
 def create_single_item_dict(item_id, qty_req):
+    """Creates a dictionary for a single item with its required quantity as values"""
     item_dict = {}
     item_dict[item_id] = qty_req
     return item_dict
 
 def get_item_dict(item_fks_dict):
+    """"Creates a dictionary with all the details for an item as values and its PK as key"""
     item_table = TableManger("Item")
     item_dict = {}
     
@@ -43,7 +46,7 @@ def get_item_dict(item_fks_dict):
         if details:
             columns = ["PartNumber", "Description", "ItemTypeFK", "PartLength",
                        "PartWidth", "Thickness", "StockLength", "StockWidth", "Comment"]
-            item_details = details[0]  
+            item_details = details[0]
             item_dict[fk] = {column: value for column, value in zip(columns, item_details)}
             item_dict[fk]["QuantityRequired"] = value
     
@@ -113,6 +116,7 @@ def sort_items_in_groups(item_dict: dict):
 
 
 def create_excel(filepath, item_dict, rfq_number):
+    """Creates an Excel file with the item_dict data for a RFQ Number"""
     workbook = openpyxl.load_workbook(filepath)
     # new_dir = os.path.join(r".\RFQ_Excel", str(rfq_number))
     new_dir = os.path.abspath(os.path.join(".", "RFQ_Excel", str(rfq_number)))
@@ -142,6 +146,7 @@ def send_all_emails(filepath_folder_of_excel_sheets: str) -> None:
 
 
 def create_excel_sheets(rfq_number=None, item_id=None, qty_req=None):
+    """Creates Excel sheet and returns the filepath of the excel sheet"""
     if rfq_number:
         item_dict = get_item_dict(get_item_pks(rfq_number))
     elif item_id:
@@ -161,6 +166,7 @@ def create_excel_sheets(rfq_number=None, item_id=None, qty_req=None):
 
 
 def send_outlook_email(excel_path, email_list, subject, email_body, other_attachment=[], cc_email=None):
+    """Sends Email using Outlook in the system and attaches the filled excel sheet to the email"""
     pythoncom.CoInitialize()
     try:
         outlook = win32.Dispatch("outlook.application")
@@ -199,11 +205,13 @@ def send_outlook_email(excel_path, email_list, subject, email_body, other_attach
         pythoncom.CoUninitialize()
 
 class EmailBodyDialog(simpledialog.Dialog):
+    """ Email Body Display window and functions """
     def __init__(self, parent, initial_body):
         self.initial_body = initial_body
         super().__init__(parent, title = "Edit Email Body")
 
     def body(self, master):
+        "Edit Email Body GUI"
         self.title("Edit Email Body")
         self.geometry("600x600")
         self.resizable(True, True)
@@ -217,6 +225,7 @@ class EmailBodyDialog(simpledialog.Dialog):
         self.result = self.text.get("1.0", tk.END)
 
 def email_body_template(root): #NOTE: In future we can somehow connect this to the database and fill info automatically of the user.
+    """Template of the email body"""
     initial_body = ("Dear Supplier, \n"
             "Hope you are doing well,\n"
             "This email serves as a formal request for a quotation on pricing and lead time for the items listed in the attached Excel spreadsheet.\n"
@@ -239,7 +248,7 @@ def email_body_template(root): #NOTE: In future we can somehow connect this to t
     return dialog.result.strip() if dialog.result else initial_body 
 
 def send_mail(rfq_number=None, other_attachment = [], item_id=None, qty_req=None):
-    
+    """Main function that sends email for a RFQ Number"""
     email_dict = get_email_groups()    #NOTE: Uncomment this when needed
     # NOTE: below is the test email id's, and you can comment that and uncomment above for real supplier IDS
     # email_dict = {
@@ -290,6 +299,7 @@ def get_email_input(parent, title, initial_emails):
     return dialog.result
 
 class EmailDialog:
+    """Edit Email ID GUI and functions"""
     def __init__(self, parent, title, initial_emails):
         self.top = tk.Toplevel(parent)
         self.top.title(title)
@@ -318,17 +328,20 @@ class EmailDialog:
         self.result = None
 
     def add_email(self):
+        """Adds email ID"""
         email = self.entry.get().strip()
         if email and email not in self.listbox.get(0, tk.END):
             self.listbox.insert(tk.END, email)
             self.entry.delete(0, tk.END)
 
     def remove_email(self):
+        """Removes selected email ID"""
         selected_idx = self.listbox.curselection()
         if selected_idx:
             self.listbox.delete(selected_idx)
 
     def on_ok(self):
+        """Confirms the email id in the box are final and sends them the email"""
         self.result = list(self.listbox.get(0, tk.END))
         self.top.destroy()
         

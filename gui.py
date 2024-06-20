@@ -10,6 +10,7 @@ class EmailGui(tk.Tk):
         self.make_combobox()
     
     def make_combobox(self):
+        """Main GUI of the email app"""
         tk.Label(self, text="Enter RFQ Number: ").grid(row=0, column=0)
         self.rfq_number = tk.Entry(self, width=20)
         self.rfq_number.grid(row=1, column=0)
@@ -34,6 +35,7 @@ class EmailGui(tk.Tk):
         send_mail_button.grid(row=5, column=0)
 
     def verify_and_send_email(self, rfq_number, other_attachment=[], item_id=None, qty_req=None):
+        """ Verifies if everything if properly filled in the GUI and then calls the send_mail function to send the email"""
         if rfq_number:
             send_mail(rfq_number=rfq_number, other_attachment=other_attachment)
             messagebox.showinfo("Success", "Email sent successfully")
