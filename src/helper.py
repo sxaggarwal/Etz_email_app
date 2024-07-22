@@ -26,6 +26,18 @@ def get_item_pks(rfq_pk):
                item_fks_dict[pk[0]] = pk[1]
     return item_fks_dict
 
+def get_items_dict():
+    item_table = TableManger("Item")
+    my_dict = {}
+    data = item_table.get("ItemPK", "PartNumber")
+    for a in data: 
+        my_dict[a[0]] = a[1]
+    return my_dict
+
+def get_rfq_pk():
+    rfq_table = TableManger("RequestForQuote")
+    return rfq_table.get("RequestForQuotePK")
+
 def create_single_item_dict(item_id, qty_req):
     """Creates a dictionary for a single item with its required quantity as values"""
     item_dict = {}
@@ -219,23 +231,30 @@ class EmailBodyDialog(simpledialog.Dialog):
         self.text = ScrolledText(master, wrap=tk.WORD)
         self.text.pack(expand=True, fill=tk.BOTH)
         self.text.insert(tk.END, self.initial_body)
+
+        self.text.bind("<Return>", self.on_enter)
         return self.text
 
     def apply(self):
         self.result = self.text.get("1.0", tk.END)
+    
+    def on_enter(self, event):
+        """Insert a newline when Enter is pressed"""
+        self.text.insert(tk.INSERT, "\n")
+        return "break"
 
 def email_body_template(root): #NOTE: In future we can somehow connect this to the database and fill info automatically of the user.
     """Template of the email body"""
-    initial_body = ("Dear Supplier, \n"
-            "Hope you are doing well,\n"
-            "This email serves as a formal request for a quotation on pricing and lead time for the items listed in the attached Excel spreadsheet.\n"
+    initial_body = ("Dear Supplier, \n\n"
+            "Good Day!\n"
+            "This email serves as a formal request for a quotation on pricing and lead time for the items listed in the attached Excel spreadsheet.\n\n"
             "For your convenience, we have included several columns in the spreadsheet. While completion of all columns is not mandatory, we kindly request that you fill out those you deem most relevant to accurately reflecting your pricing and lead time for each item.\n"
-            "Please note that to ensure a proper evaluation of your offer, a completed spreadsheet is necessary.\n"
+            "Please note that to ensure a proper evaluation of your offer, a completed spreadsheet is necessary.\n\n"
             "We appreciate your prompt attention to this matter. Should you require any clarification regarding the listed items, please do not hesitate to contact us.\n"
             "\n"
             "Thankyou.\n"
             "<your_name>\n"
-            "<your_designation>\n"
+            "<your_designation>\n\n"
             "Etezazi Industries Inc.\n"
             "2101 E. 21st St North\n"
             "Wichita, KS 67214\n"
@@ -308,13 +327,16 @@ class EmailDialog:
         self.label = tk.Label(self.top, text="Edit email IDs:")
         self.label.pack(pady=10)
 
-        self.listbox = tk.Listbox(self.top, selectmode=tk.SINGLE)
+        self.listbox = tk.Listbox(self.top, selectmode=tk.EXTENDED)
         self.listbox.pack(expand=True, fill='both', padx=10, pady=10)
         for email in initial_emails:
             self.listbox.insert(tk.END, email)
+        
+        self.listbox.bind('<KeyRelease-BackSpace>', self.remove_email)
 
         self.entry = tk.Entry(self.top)
         self.entry.pack(pady=5)
+        self.entry.bind('<Return>', self.add_email)
 
         self.add_button = ttk.Button(self.top, text="Add Email", command=self.add_email)
         self.add_button.pack(side=tk.LEFT, padx=5, pady=5)
@@ -327,18 +349,19 @@ class EmailDialog:
 
         self.result = None
 
-    def add_email(self):
+    def add_email(self, event=None):
         """Adds email ID"""
         email = self.entry.get().strip()
         if email and email not in self.listbox.get(0, tk.END):
             self.listbox.insert(tk.END, email)
             self.entry.delete(0, tk.END)
 
-    def remove_email(self):
+    def remove_email(self, event=None):
         """Removes selected email ID"""
         selected_idx = self.listbox.curselection()
         if selected_idx:
-            self.listbox.delete(selected_idx)
+            for idx in reversed(selected_idx):
+                self.listbox.delete(idx)
 
     def on_ok(self):
         """Confirms the email id in the box are final and sends them the email"""
