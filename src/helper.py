@@ -127,12 +127,21 @@ def sort_items_in_groups(item_dict: dict):
     return item_dict
 
 
-def create_excel(filepath, item_dict, rfq_number):
+def create_excel(filepath, item_dict, rfq_number, item_id):
     """Creates an Excel file with the item_dict data for a RFQ Number"""
     workbook = openpyxl.load_workbook(filepath)
     # new_dir = os.path.join(r".\RFQ_Excel", str(rfq_number))
-    new_dir = os.path.abspath(os.path.join(".", "RFQ_Excel", str(rfq_number)))
-    new_filepath = os.path.join(new_dir, "_".join(filepath.split("_")[2:]))
+    if rfq_number:
+        new_dir = os.path.abspath(os.path.join(".", "RFQ_Excel", str(rfq_number)))
+        filename_parts = filepath.split("_")[2:]
+        new_filename = f"RFQ_{rfq_number}_" + "_".join(filename_parts)
+        new_filepath = os.path.join(new_dir, new_filename)
+    elif item_id:
+        new_dir = os.path.abspath(os.path.join(".", "RFQ_Excel", str(item_id)))
+        filename_parts = filepath.split("_")[2:]
+        new_filename = f"RFQ_{item_id}_" + "_".join(filename_parts)
+        new_filepath = os.path.join(new_dir, new_filename)
+    # new_filepath = os.path.join(new_dir, "_".join(filepath.split("_")[2:]))
     os.makedirs(new_dir, exist_ok=True)
     sheet = workbook.active
     sheet.delete_rows(3, sheet.max_row - 2)
@@ -172,7 +181,7 @@ def create_excel_sheets(rfq_number=None, item_id=None, qty_req=None):
                 category_list.append(value1)
     for category in category_list:
         filepath = f"RFQ_template_{category}.xlsx"
-        excel_path = create_excel(filepath, main_dict, rfq_number)
+        excel_path = create_excel(filepath, main_dict, rfq_number, item_id)
         excel_path_list.append(excel_path)
     return excel_path_list
 
@@ -285,31 +294,36 @@ def send_mail(rfq_number=None, other_attachment = [], item_id=None, qty_req=None
     root.withdraw()
     email_body = email_body_template(root)
     for excel_path in excel_path_list:
-        response = messagebox.askyesno("View/Edit Excel", f"Do you want to View and Edit the Excel file: {excel_path}")
-        if response:
-            subprocess.Popen(['start', excel_path], shell=True)
-            messagebox.showinfo("Info", f"Please edit and save the file: {excel_path}")
-            while True:
-                edit_complete = messagebox.askyesno("Edit Complete", "Have you finished editing and saving the file?")
-                if edit_complete:
-                    break
-                else:
-                    messagebox.showinfo("Info", "Please complete your edits and save the file before sending the email.")
+        excel_filename1 = os.path.basename(excel_path)
+        send_or_not = messagebox.askyesno(f"Send Mail for {excel_filename1}", f"Do you want to send email for {excel_path} ?")
+        if send_or_not:
+            response = messagebox.askyesno("View/Edit Excel", f"Do you want to View and Edit the Excel file: {excel_path}")
+            if response:
+                subprocess.Popen(['start', excel_path], shell=True)
+                # messagebox.showinfo("Info", f"Please edit and save the file: {excel_path}")
+                while True:
+                    edit_complete = messagebox.askyesno("Edit Complete", "Have you finished editing and saving the file?")
+                    if edit_complete:
+                        break
+                    else:
+                        messagebox.showinfo("Info", "Please complete your edits and save the file before sending the email.")
+            else:
+                pass
+            excel_filename = os.path.basename(excel_path)
+            for key, values in email_dict.items():
+                if key in excel_filename:
+                    # email_list_str = "\n".join(values)
+                    # new_email_list_str = simpledialog.askstring("Edit Email IDs", f"Current email IDs for {key}:\n{email_list_str}\n\nEdit email IDs (separated by commas):", initialvalue=", ".join(values))
+                    # if new_email_list_str:
+                    #     new_email_list = [email.strip() for email in new_email_list_str.split(",")]
+                    # else:
+                    #     new_email_list = values
+                    new_email_list = get_email_input(root, f"Edit Email IDs for {key}", values)
+                    if new_email_list is not None:
+                        send_outlook_email(excel_path, new_email_list, subject, email_body, other_attachment=other_attachment, cc_email="quote@etezazicorps.com")
+                    # send_outlook_email(excel_path, new_email_list, subject, other_attachment=other_attachment)
         else:
             pass
-        excel_filename = os.path.basename(excel_path)
-        for key, values in email_dict.items():
-            if key in excel_filename:
-                # email_list_str = "\n".join(values)
-                # new_email_list_str = simpledialog.askstring("Edit Email IDs", f"Current email IDs for {key}:\n{email_list_str}\n\nEdit email IDs (separated by commas):", initialvalue=", ".join(values))
-                # if new_email_list_str:
-                #     new_email_list = [email.strip() for email in new_email_list_str.split(",")]
-                # else:
-                #     new_email_list = values
-                new_email_list = get_email_input(root, f"Edit Email IDs for {key}", values)
-                if new_email_list is not None:
-                    send_outlook_email(excel_path, new_email_list, subject, email_body, other_attachment=other_attachment, cc_email="quote@etezazicorps.com")
-                # send_outlook_email(excel_path, new_email_list, subject, other_attachment=other_attachment)
     root.destroy()
 
 def get_email_input(parent, title, initial_emails):
