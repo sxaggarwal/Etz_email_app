@@ -13,17 +13,33 @@ def get_item_pks(rfq_pk):
     """Gets all the ItemPK that is there in the RFQ"""
     rfq_line_table = TableManger("RequestForQuoteLine")
     quote_assembly_table = TableManger("QuoteAssembly")
-    quote_fk = rfq_line_table.get("QuoteFK", RequestForQuoteFK=rfq_pk)
+    
+    # Retrieve the list of (QuoteFK, Quantity) for the given RFQ
+    quote_fk_list = rfq_line_table.get("QuoteFK", "Quantity", RequestForQuoteFK=rfq_pk)
     all_item_pks = []
     item_fks_dict = {}
-    if quote_fk:
-        for fk in quote_fk:
-            item_pks = quote_assembly_table.get("ItemFK", "QuantityRequired", QuoteFK=fk[0])         
-            if item_pks:
-                all_item_pks.extend(item_pks)
-        for pk in all_item_pks:
-            if pk[0] is not None:
-               item_fks_dict[pk[0]] = pk[1]
+    
+    if quote_fk_list:
+        for fk, quantity in quote_fk_list:
+            if quantity is not None:
+                # Retrieve the list of (ItemFK, QuantityRequired) for each QuoteFK
+                item_pks = quote_assembly_table.get("ItemFK", "QuantityRequired", QuoteFK=fk)
+                
+                if item_pks:
+                    for item_fk, qty_required in item_pks:
+                        if qty_required is not None:
+                            # Calculate total quantity required for each item
+                            total_quantity = qty_required * quantity
+                            all_item_pks.append((item_fk, total_quantity))
+                            
+        # Aggregate quantities for each item
+        for item_fk, quantity in all_item_pks:
+            if item_fk is not None:
+                if item_fk in item_fks_dict:
+                    item_fks_dict[item_fk] += quantity
+                else:
+                    item_fks_dict[item_fk] = quantity
+    
     return item_fks_dict
 
 def get_items_dict():
