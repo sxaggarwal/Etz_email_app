@@ -8,6 +8,8 @@ from  tkinter import messagebox, ttk, simpledialog
 import subprocess
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
+from openpyxl.utils import get_column_letter
+from openpyxl.styles import Alignment
 
 def get_item_pks(rfq_pk):
     """Gets all the ItemPK that is there in the RFQ"""
@@ -68,12 +70,12 @@ def get_item_dict(item_fks_dict):
     for fk, value in item_fks_dict.items():
         details = item_table.get(
             "PartNumber", "Description", "ItemTypeFK", "PartLength",
-            "PartWidth", "Thickness", "StockLength", "StockWidth", "Comment",
+            "PartWidth", "Thickness", "StockLength", "StockWidth", "PurchaseOrderComment",
             ItemPK=fk
         )
         if details:
             columns = ["PartNumber", "Description", "ItemTypeFK", "PartLength",
-                       "PartWidth", "Thickness", "StockLength", "StockWidth", "Comment"]
+                       "PartWidth", "Thickness", "StockLength", "StockWidth", "PurchaseOrderComment"]
             item_details = details[0]
             item_dict[fk] = {column: value for column, value in zip(columns, item_details)}
             item_dict[fk]["QuantityRequired"] = value
@@ -121,7 +123,7 @@ def sort_items_in_groups(item_dict: dict):
         email_category = None  # Initialize email_category to avoid reference before assignment
 
         if category == "fin":
-            if "ht" in part_number_split:
+            if "ht" in part_number_split or "heat" in part_number_split:
                 email_category = "ht"
             else:
                 email_category = "fin"
@@ -143,10 +145,42 @@ def sort_items_in_groups(item_dict: dict):
     return item_dict
 
 
+# def create_excel(filepath, item_dict, rfq_number, item_id):
+#     """Creates an Excel file with the item_dict data for a RFQ Number"""
+#     workbook = openpyxl.load_workbook(filepath)
+#     # new_dir = os.path.join(r".\RFQ_Excel", str(rfq_number))
+#     if rfq_number:
+#         new_dir = os.path.abspath(os.path.join(".", "RFQ_Excel", str(rfq_number)))
+#         filename_parts = filepath.split("_")[2:]
+#         new_filename = f"RFQ_{rfq_number}_" + "_".join(filename_parts)
+#         new_filepath = os.path.join(new_dir, new_filename)
+#     elif item_id:
+#         new_dir = os.path.abspath(os.path.join(".", "RFQ_Excel", str(item_id)))
+#         filename_parts = filepath.split("_")[2:]
+#         new_filename = f"RFQ_{item_id}_" + "_".join(filename_parts)
+#         new_filepath = os.path.join(new_dir, new_filename)
+#     # new_filepath = os.path.join(new_dir, "_".join(filepath.split("_")[2:]))
+#     os.makedirs(new_dir, exist_ok=True)
+#     sheet = workbook.active
+#     sheet.delete_rows(3, sheet.max_row - 2)
+#     row_idx = 3
+#     for key, values in item_dict.items():
+#         if filepath == f"RFQ_template_{values['EmailCategory']}.xlsx":
+#             sheet.cell(row=row_idx, column=1).value = values['PartNumber']
+#             sheet.cell(row=row_idx, column=2).value = values['Description']
+#             sheet.cell(row=row_idx, column=6).value = values['StockLength'] if values['EmailCategory'] in ['mat-al', 'mat-steel'] else values['PartLength']
+#             sheet.cell(row=row_idx, column=5).value = values['StockWidth'] if values['EmailCategory'] == 'mat-al' or values['Category']=='mat-steel' else values['PartWidth']
+#             sheet.cell(row=row_idx, column=4).value = values['Thickness']
+#             sheet.cell(row=row_idx, column=7).value = values['Comment']
+#             sheet.cell(row=row_idx, column=3).value = values['QuantityRequired']
+#             #Insert here
+#             row_idx += 1
+#     workbook.save(new_filepath)
+#     return new_filepath
+
 def create_excel(filepath, item_dict, rfq_number, item_id):
     """Creates an Excel file with the item_dict data for a RFQ Number"""
     workbook = openpyxl.load_workbook(filepath)
-    # new_dir = os.path.join(r".\RFQ_Excel", str(rfq_number))
     if rfq_number:
         new_dir = os.path.abspath(os.path.join(".", "RFQ_Excel", str(rfq_number)))
         filename_parts = filepath.split("_")[2:]
@@ -157,22 +191,56 @@ def create_excel(filepath, item_dict, rfq_number, item_id):
         filename_parts = filepath.split("_")[2:]
         new_filename = f"RFQ_{item_id}_" + "_".join(filename_parts)
         new_filepath = os.path.join(new_dir, new_filename)
-    # new_filepath = os.path.join(new_dir, "_".join(filepath.split("_")[2:]))
+
     os.makedirs(new_dir, exist_ok=True)
     sheet = workbook.active
     sheet.delete_rows(3, sheet.max_row - 2)
     row_idx = 3
+
     for key, values in item_dict.items():
         if filepath == f"RFQ_template_{values['EmailCategory']}.xlsx":
             sheet.cell(row=row_idx, column=1).value = values['PartNumber']
             sheet.cell(row=row_idx, column=2).value = values['Description']
             sheet.cell(row=row_idx, column=6).value = values['StockLength'] if values['EmailCategory'] in ['mat-al', 'mat-steel'] else values['PartLength']
-            sheet.cell(row=row_idx, column=5).value = values['StockWidth'] if values['EmailCategory'] == 'mat-al' or values['Category']=='mat-steel' else values['PartWidth']
+            sheet.cell(row=row_idx, column=5).value = values['StockWidth'] if values['EmailCategory'] == 'mat-al' or values['Category'] == 'mat-steel' else values['PartWidth']
             sheet.cell(row=row_idx, column=4).value = values['Thickness']
-            sheet.cell(row=row_idx, column=7).value = values['Comment']
+            sheet.cell(row=row_idx, column=7).value = values['PurchaseOrderComment']
             sheet.cell(row=row_idx, column=3).value = values['QuantityRequired']
-            #Insert here
             row_idx += 1
+
+    # Adjust column widths based on the length of the text in each cell, including the header
+    for column_cells in sheet.columns:
+        max_length = 0
+        column = column_cells[0].column_letter  # Get the column letter
+        for cell in column_cells:
+            cell.alignment = Alignment(wrap_text=True)  # Enable wrap text
+            try:
+                if cell.value and len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = (max_length + 2)
+        sheet.column_dimensions[column].width = adjusted_width
+
+    # Adjust row heights based on the length of the text in each cell, including the heading row
+    for row in sheet.iter_rows(min_row=1, max_row=row_idx - 1):
+        max_height = 15  # Default row height
+        for cell in row:
+            if cell.value and isinstance(cell.value, str):
+                lines = cell.value.split('\n')
+                height = len(lines) * 15  # Approximate row height for multiple lines of text
+                if height > max_height:
+                    max_height = height
+        sheet.row_dimensions[row[0].row].height = max_height
+
+    # Explicitly adjust the width of columns based on the header text, adding extra width
+    extra_width = 5  # Define the extra width for the headers
+    for cell in sheet[1]:
+        if cell.value:
+            column = get_column_letter(cell.column)
+            adjusted_width = len(str(cell.value)) + 2 + extra_width
+            sheet.column_dimensions[column].width = max(sheet.column_dimensions[column].width, adjusted_width)
+
     workbook.save(new_filepath)
     return new_filepath
 
@@ -311,7 +379,10 @@ def send_mail(rfq_number=None, other_attachment = [], item_id=None, qty_req=None
     email_body = email_body_template(root)
     for excel_path in excel_path_list:
         excel_filename1 = os.path.basename(excel_path)
-        send_or_not = messagebox.askyesno(f"Send Mail for {excel_filename1}", f"Do you want to send email for {excel_path} ?")
+        if rfq_number:
+            send_or_not = messagebox.askyesno(f"Send Mail for {excel_filename1}", f"Do you want to send email for {excel_path} ?")
+        else:
+            send_or_not = True
         if send_or_not:
             response = messagebox.askyesno("View/Edit Excel", f"Do you want to View and Edit the Excel file: {excel_path}")
             if response:

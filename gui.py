@@ -150,7 +150,7 @@ class EmailGui(tk.Tk):
         self.search_result_box.delete(0, tk.END)
         if selected_type == "Item":
             for key, value in self.item_dict.items():
-                if value is not None and value.startswith(user_search):
+                if value is not None and user_search.lower() in value.lower() or user_search.lower() in str(key).lower():
                     self.search_result_box.insert(tk.END, f"{key} - {value}")
         elif selected_type == "RFQ":
             for pk in self.rfq_pk:
