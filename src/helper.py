@@ -10,6 +10,7 @@ import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment
+import xlwings as xw
 
 def get_item_pks(rfq_pk):
     """Gets all the ItemPK that is there in the RFQ"""
@@ -144,42 +145,8 @@ def sort_items_in_groups(item_dict: dict):
  
     return item_dict
 
-
-# def create_excel(filepath, item_dict, rfq_number, item_id):
-#     """Creates an Excel file with the item_dict data for a RFQ Number"""
-#     workbook = openpyxl.load_workbook(filepath)
-#     # new_dir = os.path.join(r".\RFQ_Excel", str(rfq_number))
-#     if rfq_number:
-#         new_dir = os.path.abspath(os.path.join(".", "RFQ_Excel", str(rfq_number)))
-#         filename_parts = filepath.split("_")[2:]
-#         new_filename = f"RFQ_{rfq_number}_" + "_".join(filename_parts)
-#         new_filepath = os.path.join(new_dir, new_filename)
-#     elif item_id:
-#         new_dir = os.path.abspath(os.path.join(".", "RFQ_Excel", str(item_id)))
-#         filename_parts = filepath.split("_")[2:]
-#         new_filename = f"RFQ_{item_id}_" + "_".join(filename_parts)
-#         new_filepath = os.path.join(new_dir, new_filename)
-#     # new_filepath = os.path.join(new_dir, "_".join(filepath.split("_")[2:]))
-#     os.makedirs(new_dir, exist_ok=True)
-#     sheet = workbook.active
-#     sheet.delete_rows(3, sheet.max_row - 2)
-#     row_idx = 3
-#     for key, values in item_dict.items():
-#         if filepath == f"RFQ_template_{values['EmailCategory']}.xlsx":
-#             sheet.cell(row=row_idx, column=1).value = values['PartNumber']
-#             sheet.cell(row=row_idx, column=2).value = values['Description']
-#             sheet.cell(row=row_idx, column=6).value = values['StockLength'] if values['EmailCategory'] in ['mat-al', 'mat-steel'] else values['PartLength']
-#             sheet.cell(row=row_idx, column=5).value = values['StockWidth'] if values['EmailCategory'] == 'mat-al' or values['Category']=='mat-steel' else values['PartWidth']
-#             sheet.cell(row=row_idx, column=4).value = values['Thickness']
-#             sheet.cell(row=row_idx, column=7).value = values['Comment']
-#             sheet.cell(row=row_idx, column=3).value = values['QuantityRequired']
-#             #Insert here
-#             row_idx += 1
-#     workbook.save(new_filepath)
-#     return new_filepath
-
 def create_excel(filepath, item_dict, rfq_number, item_id):
-    """Creates an Excel file with the item_dict data for a RFQ Number"""
+    """Creates an Excel file with the item_dict data for a RFQ Number."""
     workbook = openpyxl.load_workbook(filepath)
     if rfq_number:
         new_dir = os.path.abspath(os.path.join(".", "RFQ_Excel", str(rfq_number)))
@@ -194,8 +161,8 @@ def create_excel(filepath, item_dict, rfq_number, item_id):
 
     os.makedirs(new_dir, exist_ok=True)
     sheet = workbook.active
-    sheet.delete_rows(3, sheet.max_row - 2)
-    row_idx = 3
+    sheet.delete_rows(7, sheet.max_row - 6)
+    row_idx = 7
 
     for key, values in item_dict.items():
         if filepath == f"RFQ_template_{values['EmailCategory']}.xlsx":
@@ -206,43 +173,108 @@ def create_excel(filepath, item_dict, rfq_number, item_id):
             sheet.cell(row=row_idx, column=4).value = values['Thickness']
             sheet.cell(row=row_idx, column=7).value = values['PurchaseOrderComment']
             sheet.cell(row=row_idx, column=3).value = values['QuantityRequired']
+
+            # Apply wrap text to relevant cells
+            for col in range(1, 8):
+                sheet.cell(row=row_idx, column=col).alignment = Alignment(wrap_text=True)
+            
             row_idx += 1
 
-    # Adjust column widths based on the length of the text in each cell, including the header
-    for column_cells in sheet.columns:
-        max_length = 0
-        column = column_cells[0].column_letter  # Get the column letter
-        for cell in column_cells:
-            cell.alignment = Alignment(wrap_text=True)  # Enable wrap text
-            try:
-                if cell.value and len(str(cell.value)) > max_length:
-                    max_length = len(str(cell.value))
-            except:
-                pass
-        adjusted_width = (max_length + 2)
-        sheet.column_dimensions[column].width = adjusted_width
-
-    # Adjust row heights based on the length of the text in each cell, including the heading row
-    for row in sheet.iter_rows(min_row=1, max_row=row_idx - 1):
-        max_height = 15  # Default row height
-        for cell in row:
-            if cell.value and isinstance(cell.value, str):
-                lines = cell.value.split('\n')
-                height = len(lines) * 15  # Approximate row height for multiple lines of text
-                if height > max_height:
-                    max_height = height
-        sheet.row_dimensions[row[0].row].height = max_height
-
-    # Explicitly adjust the width of columns based on the header text, adding extra width
-    extra_width = 5  # Define the extra width for the headers
-    for cell in sheet[1]:
-        if cell.value:
-            column = get_column_letter(cell.column)
-            adjusted_width = len(str(cell.value)) + 2 + extra_width
-            sheet.column_dimensions[column].width = max(sheet.column_dimensions[column].width, adjusted_width)
-
     workbook.save(new_filepath)
+    auto_fit_excel(new_filepath)
     return new_filepath
+
+def auto_fit_excel(file_path):
+    # Open the Excel workbook
+    app = xw.App(visible=False)
+    workbook = xw.Book(file_path)
+ 
+    # Loop through each sheet in the workbook
+    for sheet in workbook.sheets:
+        # Auto-fit columns
+        sheet.autofit('c')
+        # Auto-fit rows
+        sheet.autofit('r')
+ 
+    # Save and close the workbook
+    workbook.save(file_path)
+    workbook.close()
+    app.quit()
+
+# def create_excel(filepath, item_dict, rfq_number, item_id):
+#     """Creates an Excel file with the item_dict data for a RFQ Number"""
+#     workbook = openpyxl.load_workbook(filepath)
+#     if rfq_number:
+#         new_dir = os.path.abspath(os.path.join(".", "RFQ_Excel", str(rfq_number)))
+#         filename_parts = filepath.split("_")[2:]
+#         new_filename = f"RFQ_{rfq_number}_" + "_".join(filename_parts)
+#         new_filepath = os.path.join(new_dir, new_filename)
+#     elif item_id:
+#         new_dir = os.path.abspath(os.path.join(".", "RFQ_Excel", str(item_id)))
+#         filename_parts = filepath.split("_")[2:]
+#         new_filename = f"RFQ_{item_id}_" + "_".join(filename_parts)
+#         new_filepath = os.path.join(new_dir, new_filename)
+
+#     os.makedirs(new_dir, exist_ok=True)
+#     sheet = workbook.active
+#     sheet.delete_rows(3, sheet.max_row - 2)
+#     row_idx = 3
+
+#     for key, values in item_dict.items():
+#         if filepath == f"RFQ_template_{values['EmailCategory']}.xlsx":
+#             sheet.cell(row=row_idx, column=1).value = values['PartNumber']
+#             sheet.cell(row=row_idx, column=2).value = values['Description']
+#             sheet.cell(row=row_idx, column=6).value = values['StockLength'] if values['EmailCategory'] in ['mat-al', 'mat-steel'] else values['PartLength']
+#             sheet.cell(row=row_idx, column=5).value = values['StockWidth'] if values['EmailCategory'] == 'mat-al' or values['Category'] == 'mat-steel' else values['PartWidth']
+#             sheet.cell(row=row_idx, column=4).value = values['Thickness']
+#             sheet.cell(row=row_idx, column=7).value = values['PurchaseOrderComment']
+#             sheet.cell(row=row_idx, column=3).value = values['QuantityRequired']
+
+#             # Apply wrap text to relevant cells, especially the "Comment" column (column 7)
+#             for col in range(1, 8):
+#                 sheet.cell(row=row_idx, column=col).alignment = Alignment(wrap_text=True)
+            
+#             row_idx += 1
+
+#     # Adjust column widths based on the length of the text in each cell, including the header
+#     max_comment_width = 50  # Define a reasonable max width for the "Comment" column
+#     for column_cells in sheet.columns:
+#         max_length = 0
+#         column = column_cells[0].column_letter  # Get the column letter
+#         for cell in column_cells:
+#             try:
+#                 if cell.value and len(str(cell.value)) > max_length:
+#                     max_length = len(str(cell.value))
+#             except:
+#                 pass
+        
+#         # Adjust column width with consideration for "Comment" column max width
+#         adjusted_width = (max_length + 2)
+#         if column == "G":  # Column "G" corresponds to the "Comment" column
+#             adjusted_width = min(adjusted_width, max_comment_width)
+#         sheet.column_dimensions[column].width = adjusted_width
+
+#     # Adjust row heights based on the length of the text in each cell, including the heading row
+#     for row in sheet.iter_rows(min_row=1, max_row=row_idx - 1):
+#         max_height = 15  # Default row height
+#         for cell in row:
+#             if cell.value and isinstance(cell.value, str):
+#                 lines = cell.value.split('\n')
+#                 height = len(lines) * 15  # Approximate row height for multiple lines of text
+#                 if height > max_height:
+#                     max_height = height
+#         sheet.row_dimensions[row[0].row].height = max_height
+
+#     # Explicitly adjust the width of columns based on the header text, adding extra width
+#     extra_width = 5  # Define the extra width for the headers
+#     for cell in sheet[1]:
+#         if cell.value:
+#             column = get_column_letter(cell.column)
+#             adjusted_width = len(str(cell.value)) + 2 + extra_width
+#             sheet.column_dimensions[column].width = max(sheet.column_dimensions[column].width, adjusted_width)
+
+#     workbook.save(new_filepath)
+#     return new_filepath
 
 
 def send_all_emails(filepath_folder_of_excel_sheets: str) -> None:
@@ -270,40 +302,76 @@ def create_excel_sheets(rfq_number=None, item_id=None, qty_req=None):
     return excel_path_list
 
 
+# def send_outlook_email(excel_path, email_list, subject, email_body, other_attachment=[], cc_email=None):
+#     """Sends Email using Outlook in the system and attaches the filled excel sheet to the email"""
+#     pythoncom.CoInitialize()
+#     try:
+#         outlook = win32.Dispatch("outlook.application")
+#         print("Outlook email creation started")
+
+#         for email in email_list:
+#             try:
+#                 mail = outlook.CreateItem(0)  # Create a new mail item for each recipient
+#                 mail.Subject = subject
+#                 mail.Body = email_body
+#                 mail.To = email
+#                 mail.CC = cc_email
+
+#                 abs_excel_path = os.path.abspath(excel_path)
+#                 if os.path.isfile(abs_excel_path):
+#                     mail.Attachments.Add(abs_excel_path)
+#                 else:
+#                     print(f"Attachment not found: {abs_excel_path}")
+
+#                 for attachment in other_attachment:
+#                     abs_attachment_path = os.path.abspath(attachment)
+#                     if os.path.isfile(abs_attachment_path):
+#                         mail.Attachments.Add(abs_attachment_path)
+#                     else:
+#                         print(f"Additional attachment not found: {abs_attachment_path}")
+
+#                 mail.Send()
+#                 print(f"Email sent to {email}")
+#                 time.sleep(1)  # Adding a delay to avoid rate limits or other issues
+#             except Exception as e:
+#                 print(f"An error occurred while sending email to {email}: {e}")
+#                 # Retry logic can be added here if needed
+#     except Exception as e:
+#         print(f"An error occurred: {e}")
+#     finally:
+#         pythoncom.CoUninitialize()
+
 def send_outlook_email(excel_path, email_list, subject, email_body, other_attachment=[], cc_email=None):
-    """Sends Email using Outlook in the system and attaches the filled excel sheet to the email"""
+    """Sends a single email using Outlook with all email addresses in BCC and attaches the filled excel sheet."""
     pythoncom.CoInitialize()
     try:
         outlook = win32.Dispatch("outlook.application")
         print("Outlook email creation started")
 
-        for email in email_list:
-            try:
-                mail = outlook.CreateItem(0)  # Create a new mail item for each recipient
-                mail.Subject = subject
-                mail.Body = email_body
-                mail.To = email
-                mail.CC = cc_email
+        mail = outlook.CreateItem(0)  # Create a new mail item
+        mail.Subject = subject
+        mail.Body = email_body
+        mail.BCC = ";".join(email_list)
+        mail.To = cc_email # Add all emails to BCC
 
-                abs_excel_path = os.path.abspath(excel_path)
-                if os.path.isfile(abs_excel_path):
-                    mail.Attachments.Add(abs_excel_path)
-                else:
-                    print(f"Attachment not found: {abs_excel_path}")
+        # if cc_email:
+        #     mail.CC = cc_email
 
-                for attachment in other_attachment:
-                    abs_attachment_path = os.path.abspath(attachment)
-                    if os.path.isfile(abs_attachment_path):
-                        mail.Attachments.Add(abs_attachment_path)
-                    else:
-                        print(f"Additional attachment not found: {abs_attachment_path}")
+        abs_excel_path = os.path.abspath(excel_path)
+        if os.path.isfile(abs_excel_path):
+            mail.Attachments.Add(abs_excel_path)
+        else:
+            print(f"Attachment not found: {abs_excel_path}")
 
-                mail.Send()
-                print(f"Email sent to {email}")
-                time.sleep(1)  # Adding a delay to avoid rate limits or other issues
-            except Exception as e:
-                print(f"An error occurred while sending email to {email}: {e}")
-                # Retry logic can be added here if needed
+        for attachment in other_attachment:
+            abs_attachment_path = os.path.abspath(attachment)
+            if os.path.isfile(abs_attachment_path):
+                mail.Attachments.Add(abs_attachment_path)
+            else:
+                print(f"Additional attachment not found: {abs_attachment_path}")
+
+        mail.Send()
+        print(f"Email sent to {len(email_list)} recipients.")
     except Exception as e:
         print(f"An error occurred: {e}")
     finally:
@@ -359,7 +427,7 @@ def email_body_template(root): #NOTE: In future we can somehow connect this to t
     # root.wait_window(dialog)
     return dialog.result.strip() if dialog.result else initial_body 
 
-def send_mail(rfq_number=None, other_attachment = [], item_id=None, qty_req=None):
+def send_mail(rfq_number=None, other_attachment = [], item_id=None, qty_req=None, fin_attachment = []):
     """Main function that sends email for a RFQ Number"""
     email_dict = get_email_groups()    #NOTE: Uncomment this when needed
     # NOTE: below is the test email id's, and you can comment that and uncomment above for real supplier IDS
@@ -399,15 +467,20 @@ def send_mail(rfq_number=None, other_attachment = [], item_id=None, qty_req=None
             excel_filename = os.path.basename(excel_path)
             for key, values in email_dict.items():
                 if key in excel_filename:
+                    new_subject = f"{subject} ({key})"
                     # email_list_str = "\n".join(values)
                     # new_email_list_str = simpledialog.askstring("Edit Email IDs", f"Current email IDs for {key}:\n{email_list_str}\n\nEdit email IDs (separated by commas):", initialvalue=", ".join(values))
                     # if new_email_list_str:
                     #     new_email_list = [email.strip() for email in new_email_list_str.split(",")]
                     # else:
                     #     new_email_list = values
+                    if key == 'fin':
+                        attachments = other_attachment + fin_attachment
+                    else:
+                        attachments = other_attachment
                     new_email_list = get_email_input(root, f"Edit Email IDs for {key}", values)
                     if new_email_list is not None:
-                        send_outlook_email(excel_path, new_email_list, subject, email_body, other_attachment=other_attachment, cc_email="quote@etezazicorps.com")
+                        send_outlook_email(excel_path, new_email_list, new_subject, email_body, other_attachment=attachments, cc_email='quote@etezazicorps.com') #NOTE: add cc_email
                     # send_outlook_email(excel_path, new_email_list, subject, other_attachment=other_attachment)
         else:
             pass
