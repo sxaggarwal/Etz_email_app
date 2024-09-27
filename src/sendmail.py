@@ -23,7 +23,10 @@ def send_mail(subject, body, recipient):
     with get_connection() as conn:
         query = "SELECT IDENT_CURRENT('msdb.dbo.sysmail_allitems')"
         cursor.execute(query)
-        pk = cursor.fetchone()[0]
+
+        pk = cursor.fetchone()
+        if pk:
+            pk = pk[0]
         sent_status_query = "SELECT sent_status FROM msdb.dbo.sysmail_allitems WHERE mailitem_id = ?"
         cursor.execute(sent_status_query, pk)
         status = cursor.fetchone()[0] 

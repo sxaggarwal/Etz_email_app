@@ -286,7 +286,7 @@ def create_excel_sheets(rfq_number=None, item_id=None, qty_req=None):
     """Creates Excel sheet and returns the filepath of the excel sheet"""
     if rfq_number:
         item_dict = get_item_dict(get_item_pks(rfq_number))
-    elif item_id:
+    elif item_id:  # TODO: this should be an else
         item_dict = get_item_dict(create_single_item_dict(item_id, qty_req)) #put a dict
     main_dict = sort_items_in_groups(item_dict)
     category_list = []
@@ -296,7 +296,7 @@ def create_excel_sheets(rfq_number=None, item_id=None, qty_req=None):
             if key1 == "EmailCategory" and value1 not in category_list:
                 category_list.append(value1)
     for category in category_list:
-        filepath = f"RFQ_template_{category}.xlsx"
+        filepath = "templates/" + f"RFQ_template_{category}.xlsx"
         excel_path = create_excel(filepath, main_dict, rfq_number, item_id)
         excel_path_list.append(excel_path)
     return excel_path_list
