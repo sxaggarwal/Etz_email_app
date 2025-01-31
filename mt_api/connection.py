@@ -1,5 +1,5 @@
 import pyodbc
-from src.logging_config import setup_logging
+from mt_api.logging_config import setup_logging
 
 _conn_string_sandbox = "DRIVER={SQL Server};SERVER=ETZ-SQL;DATABASE=SANDBOX;Trusted_Connection=yes"
 _conn_string_live = "DRIVER={SQL Server};SERVER=ETZ-SQL;DATABASE=ETEZAZIMIETrakLive;Trusted_Connection=yes"

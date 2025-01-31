@@ -1,5 +1,5 @@
-from src.connection import get_connection
-from src.exceptions import TableDoesNotExistError
+from mt_api.connection import get_connection
+from mt_api.exceptions import TableDoesNotExistError
 
 
 def _get_schema(table_name: str):

@@ -1,6 +1,6 @@
-from src.connection import get_connection
-from src.exceptions import  SchemaError
-from src.schema import _get_schema, print_schema
+from mt_api.connection import get_connection
+from mt_api.exceptions import  SchemaError
+from mt_api.schema import _get_schema, print_schema
 import pyodbc
 import logging
 

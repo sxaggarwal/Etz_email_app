@@ -8,6 +8,7 @@ pyodbc = "*"
 openpyxl = "*"
 pywin32 = "*"
 xlwings = "*"
+loguru = "*"
 
 [dev-packages]
 

@@ -1,6 +1,11 @@
+from collections.abc import ValuesView
 import tkinter as tk
 from tkinter import messagebox, filedialog, ttk
-from src.helper import send_mail, get_items_dict, get_rfq_pk
+from scripts import item_gui
+from scripts.helper import send_mail, get_items_dict, get_rfq_pk
+from scripts.mt_commodity_script import Controller
+from scripts.item_gui import PopupWindow
+import scripts.mt_commodity_script as mt
 
 
 class EmailGui(tk.Tk):
@@ -10,6 +15,7 @@ class EmailGui(tk.Tk):
         self.geometry("310x500")
         self.make_combobox()
         self.item_dict = get_items_dict()
+        self.controller = Controller()
         self.rfq_pk = get_rfq_pk()
 
     def make_combobox(self):
@@ -86,13 +92,47 @@ class EmailGui(tk.Tk):
         selected_type = self.type_select_box.get()
 
         if selected_type == "RFQ" and rfq_number:
-            send_mail(rfq_number=rfq_number, other_attachment=other_attachment, fin_attachment=fin_attachment)
-            messagebox.showinfo("Success", "Email sent successfully")
+            # NOTE: main function
+            messagebox.showinfo(title="Searching...", message="Fetching items and their commodity from the RFQ")
+
+            try:
+                item_details_dict = self.controller.get_all_line_items_for_rfq(rfq_number)
+            except ValueError as e:
+                messagebox.showerror(title="Error", message=f"{e}")
+                return 
+
+            comm_err_buf = []
+            for key, value in item_details_dict.items():
+                if not value["commodity"]:
+                    comm_err_buf.append(key)
+
+            if comm_err_buf:
+                formatted_keys = "\n".join(str(key) for key in comm_err_buf)
+                msg = f"Commodity values are missing for the following items in Mie Trak:\n\n{formatted_keys}"
+                messagebox.showerror(title="Commodity values incomplete", message=msg)
+
+            code_to_email_dict = {}
+            for key, value in item_details_dict.items():
+                item_commodity_code = value["commodity"]
+                emails_for_code = self.controller.get_emailgroup_for_code(item_commodity_code)
+                code_to_email_dict[item_commodity_code] = emails_for_code
+
+            PopupWindow(self, code_to_email_dict)
+
+            # try:
+            #     send_mail(rfq_number=rfq_number, other_attachment=other_attachment, fin_attachment=fin_attachment)
+            # except Exception:  # user is notified in the send_mail function and then raises an error. 
+            #     return 
+
+            # messagebox.showinfo("Success", "Email sent successfully")
             # self.rfq_number.delete(0, tk.END)
-            self.other_attachments.delete(0, tk.END)
-            self.search_result_box.delete(0, tk.END)
-            self.item_qty.delete(0, tk.END)
-            self.rfq_or_item_search.delete(0, tk.END)
+
+            # NOTE: clean up
+
+            # self.other_attachments.delete(0, tk.END)
+            # self.search_result_box.delete(0, tk.END)
+            # self.item_qty.delete(0, tk.END)
+            # self.rfq_or_item_search.delete(0, tk.END)
         elif selected_type == "Item" and item_id and qty_req:
             send_mail(
                 item_id=item_id, qty_req=qty_req, other_attachment=other_attachment, fin_attachment=fin_attachment
@@ -159,19 +199,30 @@ class EmailGui(tk.Tk):
             )
 
     def search_documents(self, event=None):
+        # FIX: need to throw error if selected type not selected.
         selected_type = self.type_select_box.get()
         user_search = self.rfq_or_item_search.get()
         self.search_result_box.delete(0, tk.END)
+        # TODO: item search controller link
         if selected_type == "Item":
             for key, value in self.item_dict.items():
                 if value is not None and user_search.lower() in value.lower() or user_search.lower() in str(key).lower():
                     self.search_result_box.insert(tk.END, f"{key} - {value}")
         elif selected_type == "RFQ":
-            for pk in self.rfq_pk:
-                if str(pk[0]).startswith(user_search):
-                    self.search_result_box.insert(tk.END, f"RFQ Number: {str(pk[0])}")
+            # we should be sending a request here and not during start up
+            pk = self.controller.search_for_rfq(user_search)
+            # for pk in self.rfq_pk:
+            #     if str(pk[0]).startswith(user_search):
+            self.search_result_box.insert(tk.END, f"RFQ Number: {str(pk)}")
 
 
 if __name__ == "__main__":
     app = EmailGui()
     app.mainloop()
+
+    # code = mt.get_commodity_from_item(105417)
+    # mt.get_party_pks_from_code("MAT-AL-SHT")
+    # mt.get_party_pks_from_code("MA-ST")
+    # pks = mt.get_party_pks_from_code("MAT-AL-PLT")
+    # print(mt.get_email_from_party_pks(pks))
+

@@ -1,5 +1,5 @@
 import logging
-from src.connection import get_connection
+from mt_api.connection import get_connection
 import time
 
 logger = logging.getLogger().getChild("MAIL")
