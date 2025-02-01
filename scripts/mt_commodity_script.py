@@ -96,7 +96,7 @@ class Controller:
         return item_and_details_dict
 
 
-    def get_emailgroup_for_code(self, comm_code) -> List[str]:
+    def get_emailgroup_for_code(self, comm_code) -> List[Tuple[str, str]]:
         """
         TO BE USED WITH GET EMAIL FROM PARTY ONLY 
         Returns PartyPKs associated with the Code.
@@ -122,7 +122,7 @@ class Controller:
         return self._get_email_from_party_pks(party_fks)
 
 
-    def _get_email_from_party_pks(self, party_pks) -> List[str]:
+    def _get_email_from_party_pks(self, party_pks) -> List[Tuple[str, str]]:
         """
         Gets email IDs from Party Table when given a list of party Pks.
 
@@ -134,12 +134,12 @@ class Controller:
         emails = []
 
         for party_pk in party_pks:
-            email = party_table.get("Email", PartyPK=party_pk[0])
-            emails.append(email[0][0])
+            email = party_table.get("Name", "Email", PartyPK=party_pk[0])
+            emails.append(email[0])
 
         return emails
 
-    def get_all_codes_and_emails(self) -> Dict[str, List[str]]:
+    def get_all_codes_and_emails(self) -> Dict[str, List[Tuple[str, str]]]:
         code_to_email_dict = {}
         commodity_table = TableManger("Commodity")
         codes = commodity_table.get("Code")

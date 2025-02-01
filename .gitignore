@@ -6,5 +6,6 @@ build/
 dist/
 gui.spec
 test_gui.py
-Pipfile
 Pipfile.lock
+Pipfile
+templates/

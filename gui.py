@@ -1,4 +1,5 @@
 from collections.abc import ValuesView
+from pprint import pprint
 import tkinter as tk
 from tkinter import messagebox, filedialog, ttk
 from scripts import item_gui
@@ -95,27 +96,27 @@ class EmailGui(tk.Tk):
             # NOTE: main function
             messagebox.showinfo(title="Searching...", message="Fetching items and their commodity from the RFQ")
 
-            try:
-                item_details_dict = self.controller.get_all_line_items_for_rfq(rfq_number)
-            except ValueError as e:
-                messagebox.showerror(title="Error", message=f"{e}")
-                return 
+            # try:
+            #     item_details_dict = self.controller.get_all_line_items_for_rfq(rfq_number)
+            # except ValueError as e:
+            #     messagebox.showerror(title="Error", message=f"{e}")
+            #     return 
 
-            comm_err_buf = []
-            for key, value in item_details_dict.items():
-                if not value["commodity"]:
-                    comm_err_buf.append(key)
+            # comm_err_buf = []
+            # for key, value in item_details_dict.items():
+            #     if not value["commodity"]:
+            #         comm_err_buf.append(key)
+            #
+            # if comm_err_buf:
+            #     formatted_keys = "\n".join(str(key) for key in comm_err_buf)
+            #     msg = f"Commodity values are missing for the following items in Mie Trak:\n\n{formatted_keys}"
+            #     messagebox.showerror(title="Commodity values incomplete", message=msg)
 
-            if comm_err_buf:
-                formatted_keys = "\n".join(str(key) for key in comm_err_buf)
-                msg = f"Commodity values are missing for the following items in Mie Trak:\n\n{formatted_keys}"
-                messagebox.showerror(title="Commodity values incomplete", message=msg)
-
-            code_to_email_dict = {}
-            for key, value in item_details_dict.items():
-                item_commodity_code = value["commodity"]
-                emails_for_code = self.controller.get_emailgroup_for_code(item_commodity_code)
-                code_to_email_dict[item_commodity_code] = emails_for_code
+            code_to_email_dict = self.controller.get_all_codes_and_emails()
+            # for key, value in item_details_dict.items():
+            #     item_commodity_code = value["commodity"]
+            #     emails_for_code = self.controller.get_emailgroup_for_code(item_commodity_code)
+            #     code_to_email_dict[item_commodity_code] = emails_for_code
 
             PopupWindow(self, code_to_email_dict)
 
@@ -220,9 +221,7 @@ if __name__ == "__main__":
     app = EmailGui()
     app.mainloop()
 
-    # code = mt.get_commodity_from_item(105417)
-    # mt.get_party_pks_from_code("MAT-AL-SHT")
-    # mt.get_party_pks_from_code("MA-ST")
-    # pks = mt.get_party_pks_from_code("MAT-AL-PLT")
-    # print(mt.get_email_from_party_pks(pks))
+    # from scripts.item_gui import ser
+    # ser()
+
 
